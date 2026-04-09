@@ -5,7 +5,7 @@ about:
   template: jolla
   links:
     - icon: envelope
-      text: edwardge3901@gmai.com
+      text: edwardge3901@gmail.com
       href: mailto:edwardge3901@gmail.com
     - icon: linkedin
       text: LinkedIn
