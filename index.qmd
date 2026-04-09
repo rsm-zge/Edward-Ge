@@ -1,0 +1,35 @@
+---
+title: "Zhijian Ge"
+image: "files/profile_pic.jpg"
+about:
+  template: jolla
+  links:
+    - icon: envelope
+      text: edwardge3901@gmai.com
+      href: mailto:edwardge3901@gmail.com
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/zhijian-ge-9521372b8/
+    - icon: twitter-x
+      text: X
+      href: https://x.com/EdwardGe3901
+    - icon: instagram
+      text: Instagram
+      href: https://www.instagram.com/auster039/
+    - icon: chat-fill
+      text: QQ
+      href: http://wpa.qq.com/msgrd?v=3&uin=1965330771&site=qq&menu=yes
+---
+
+::: {.lang-en}
+Welcome to my website! I'm Edward Ge passionate about Data Analyst and Market Prediction.
+
+I use this space to share my projects, research, and thoughts.
+Feel free to explore and reach out!
+:::
+
+::: {.lang-zh}
+欢迎来到我的个人网站！我是葛智健，热衷于数据分析和市场预测。
+
+这里是我分享项目、研究和想法的地方，欢迎随意浏览，也欢迎联系我！
+:::

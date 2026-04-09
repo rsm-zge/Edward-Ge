@@ -1,0 +1,28 @@
+---
+title: "Getting Started with Quarto"
+author: "Your Name"
+date: "2024-01-15"
+categories: [quarto, tutorial]
+description: "A brief introduction to writing documents with Quarto."
+---
+
+# What is Quarto?
+
+Quarto is an open-source scientific and technical publishing system built on
+Pandoc. It allows you to create dynamic documents, websites, presentations,
+and books with code and text together.
+
+## Why Use Quarto?
+
+- **Reproducible** — code and output live in the same file
+- **Multi-language** — supports R, Python, Julia, and Observable JS
+- **Multiple outputs** — render to HTML, PDF, Word, and more
+- **Easy publishing** — deploy to GitHub Pages, Quarto Pub, Netlify, etc.
+
+## A Simple Example
+
+```r
+summary(cars)
+```
+
+That's it — your code runs and the output is embedded automatically!
