@@ -1,5 +1,5 @@
 ---
-title: "Zhijian Ge"
+title: "Edward Ge"
 image: "files/profile_pic.jpg"
 about:
   template: jolla

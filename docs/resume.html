@@ -176,13 +176,22 @@ ul.task-list li input[type="checkbox"] {
   var currentLang = localStorage.getItem('preferred-lang') || 'en';
   var btn = document.getElementById('lang-toggle-btn');
 
+  var nameEN = 'Edward Ge';
+  var nameZH = '葛智健';
+
   function applyLang(lang) {
+    // 用 'block' 而不是 '' 确保覆盖 CSS 的 display:none
     document.querySelectorAll('.lang-en').forEach(function (el) {
-      el.style.display = lang === 'en' ? '' : 'none';
+      el.style.display = lang === 'en' ? 'block' : 'none';
     });
     document.querySelectorAll('.lang-zh').forEach(function (el) {
-      el.style.display = lang === 'zh' ? '' : 'none';
+      el.style.display = lang === 'zh' ? 'block' : 'none';
     });
+
+    // 切换名字
+    var nameEl = document.querySelector('.quarto-about-jolla h1');
+    if (nameEl) nameEl.textContent = lang === 'en' ? nameEN : nameZH;
+
     btn.textContent = lang === 'en' ? '中文' : 'EN';
     localStorage.setItem('preferred-lang', lang);
     currentLang = lang;
@@ -192,10 +201,8 @@ ul.task-list li input[type="checkbox"] {
     applyLang(currentLang === 'en' ? 'zh' : 'en');
   });
 
-  // 页面加载后立即应用上次的语言选择
-  document.addEventListener('DOMContentLoaded', function () {
-    applyLang(currentLang);
-  });
+  // 直接调用，不用 DOMContentLoaded（脚本在 body 末尾，DOM 已就绪）
+  applyLang(currentLang);
 })();
 </script>
 <script id="quarto-html-after-body" type="application/javascript">
