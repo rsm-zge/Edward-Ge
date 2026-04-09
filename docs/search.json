@@ -1,0 +1,65 @@
+[
+  {
+    "objectID": "resume.html",
+    "href": "resume.html",
+    "title": "My Resume",
+    "section": "",
+    "text": "{{&lt; pdf files/resume.pdf width=100% height=800 &gt;}}"
+  },
+  {
+    "objectID": "projects/project2/index.html",
+    "href": "projects/project2/index.html",
+    "title": "Getting Started with Quarto",
+    "section": "",
+    "text": "Quarto is an open-source scientific and technical publishing system built on Pandoc. It allows you to create dynamic documents, websites, presentations, and books with code and text together.\n\n\n\nReproducible — code and output live in the same file\nMulti-language — supports R, Python, Julia, and Observable JS\nMultiple outputs — render to HTML, PDF, Word, and more\nEasy publishing — deploy to GitHub Pages, Quarto Pub, Netlify, etc.\n\n\n\n\nsummary(cars)\nThat’s it — your code runs and the output is embedded automatically!"
+  },
+  {
+    "objectID": "projects/project2/index.html#why-use-quarto",
+    "href": "projects/project2/index.html#why-use-quarto",
+    "title": "Getting Started with Quarto",
+    "section": "",
+    "text": "Reproducible — code and output live in the same file\nMulti-language — supports R, Python, Julia, and Observable JS\nMultiple outputs — render to HTML, PDF, Word, and more\nEasy publishing — deploy to GitHub Pages, Quarto Pub, Netlify, etc."
+  },
+  {
+    "objectID": "projects/project2/index.html#a-simple-example",
+    "href": "projects/project2/index.html#a-simple-example",
+    "title": "Getting Started with Quarto",
+    "section": "",
+    "text": "summary(cars)\nThat’s it — your code runs and the output is embedded automatically!"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Zhijian Ge",
+    "section": "",
+    "text": "Welcome to my website! I’m Edward Ge passionate about Data Analyst and Market Prediction.\nI use this space to share my projects, research, and thoughts. Feel free to explore and reach out!\n\n\n欢迎来到我的个人网站！我是葛智健，热衷于数据分析和市场预测。\n这里是我分享项目、研究和想法的地方，欢迎随意浏览，也欢迎联系我！"
+  },
+  {
+    "objectID": "projects/project1/index.html",
+    "href": "projects/project1/index.html",
+    "title": "Analysis of Cars",
+    "section": "",
+    "text": "Let’s investigate the relationship between fuel efficiency (mpg) and engine displacement (disp) from the mtcars dataset.\nThose variables have a correlation of r cor(mtcars$mpg, mtcars$disp) |&gt; format(digits=2).\n\n\nHere is a plot:\nlibrary(tidyverse)\n...\n\n\n\nThere is a clear negative relationship between fuel efficiency and engine size. Larger engines tend to consume more fuel."
+  },
+  {
+    "objectID": "projects/project1/index.html#visualization",
+    "href": "projects/project1/index.html#visualization",
+    "title": "Analysis of Cars",
+    "section": "",
+    "text": "Here is a plot:\nlibrary(tidyverse)\n..."
+  },
+  {
+    "objectID": "projects/project1/index.html#conclusion",
+    "href": "projects/project1/index.html#conclusion",
+    "title": "Analysis of Cars",
+    "section": "",
+    "text": "There is a clear negative relationship between fuel efficiency and engine size. Larger engines tend to consume more fuel."
+  },
+  {
+    "objectID": "projects.html",
+    "href": "projects.html",
+    "title": "My Projects",
+    "section": "",
+    "text": "Analysis of Cars\n\n\n\nanalysis\n\nR\n\n\n\nExploring the relationship between fuel efficiency and engine displacement.\n\n\n\nYour Name\n\n\nApr 8, 2026\n\n\n\n\n\n\n\n\n\n\n\nGetting Started with Quarto\n\n\n\nquarto\n\ntutorial\n\n\n\nA brief introduction to writing documents with Quarto.\n\n\n\nYour Name\n\n\nJan 15, 2024\n\n\n\n\n\n\nNo matching items"
+  }
+]
