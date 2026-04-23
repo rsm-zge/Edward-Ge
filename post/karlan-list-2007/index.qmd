@@ -1,0 +1,424 @@
+---
+title: "Replication of Karlan & List (2007)"
+description: "Does price matter in charitable giving?"
+author: "Edward"
+date: today
+categories: [replication, causal-inference, field-experiment]
+image: thumbnail.png   # 可选：放一张缩略图
+format:
+  html:
+    toc: true
+    code-fold: true
+---
+
+## Introduction
+
+In 2007 Dean Karlan and John List ran one of the largest natural field experiments
+ever conducted in the economics of philanthropy. Working with a real (anonymous)
+liberal non-profit, they mailed **50,083 prior donors** one of two kinds of
+fundraising letters:
+
+* a **control letter** (a normal solicitation), or
+* a **treatment letter** that included a *matching grant* announcement —
+  "a concerned member of our organization will match every dollar you give."
+
+The treatment letters were further randomized across three dimensions:
+
+1. **Match ratio** — \$1:\$1, \$2:\$1, or \$3:\$1
+2. **Maximum match size** — \$25,000 / \$50,000 / \$100,000 / unstated
+3. **Suggested ask amount** — 1×, 1.25×, or 1.5× the donor's previous highest
+   contribution
+
+Because the assignment is random the comparison of treatment vs. control
+letter recipients identifies a **causal effect** of being offered a match
+on (a) the probability of giving and (b) the amount given. Two questions
+of interest:
+
+* Does offering a match work at all?
+* If so, does a *larger* match (3:1) work better than a *smaller* one (1:1)?
+
+The headline answer in the paper: **a match offer raises response rates by
+≈22% (from 1.8% to 2.2%) and revenue per solicitation by ≈19%, but a richer
+match (2:1 or 3:1) does *not* outperform a 1:1 match.** That second result
+is striking — it contradicts the standard "lower-the-price" intuition from
+public-goods theory.
+
+This post replicates the key tables (Table 1, Table 2A Panel A, and a column
+of Table 3) and adds an additional analysis showing that the treatment
+effect is concentrated in *red-state* donors — a heterogeneity result the
+paper highlights but presents only in tabular form.
+
+The data come from the openICPSR replication package (project 113224). I use
+`AERtables1-5.dta`, which contains all 50,083 mailings.
+
+```{python}
+#| label: setup
+#| code-fold: false
+import pandas as pd, numpy as np, math
+import matplotlib.pyplot as plt
+
+DATA = "data/AERtables1-5.dta"           # adjust path as needed
+df   = pd.read_stata(DATA)
+df.columns = [c.lower() for c in df.columns]
+print(f"Sample size: {df.shape[0]:,} mailings, {df.shape[1]} variables")
+print(f"Treatment = {(df['treatment']==1).sum():,} | Control = {(df['control']==1).sum():,}")
+```
+
+## Main Analysis
+
+### Table 1 — Balance check (no selection bias)
+
+Random assignment should produce treatment and control groups with similar
+pre-treatment characteristics. I run a Welch t-test on each of eleven
+baseline covariates (months-since-last-donation, highest-prior-amount,
+giving frequency, tenure, dormancy, gender, couple status, prior-county-Bush
+indicators, court-related controls).
+
+```{python}
+#| label: table1
+#| code-fold: false
+def two_sided_p_z(z):
+    return 2 * (1 - 0.5 * (1 + math.erf(abs(z) / math.sqrt(2))))
+
+def welch(x, y):
+    x, y = pd.Series(x).dropna(), pd.Series(y).dropna()
+    se = math.sqrt(x.var(ddof=1)/len(x) + y.var(ddof=1)/len(y))
+    t  = (x.mean() - y.mean()) / se if se > 0 else float('nan')
+    return x.mean(), y.mean(), x.mean()-y.mean(), se, t, two_sided_p_z(t)
+
+bal_vars = ['mrm2','hpa','freq','years','dormant','female','couple',
+            'red0','redcty','nonlit','cases']
+rows = []
+for v in bal_vars:
+    mt, mc, d, se, t, p = welch(df.loc[df['treatment']==1, v],
+                                df.loc[df['treatment']==0, v])
+    rows.append([v, mt, mc, d, se, t, p])
+table1 = pd.DataFrame(rows, columns=['variable','treat_mean','ctrl_mean',
+                                     'diff','se','t','p'])
+table1.round(4)
+```
+
+**Result.** None of the eleven covariates differ significantly between
+treatment and control at the 5% level. The two closest cases are
+*female* (p ≈ 0.08) and *red0* (p ≈ 0.06), which is fully consistent with
+random chance over 11 tests. This mirrors what the paper reports in its
+Table 1 footnote ("none of these are statistically significant"), which is
+the empirical justification for treating the experiment as cleanly randomized.
+
+The point of this table is conceptual rather than substantive: in any
+randomized design we want the *unobserved* covariates to be balanced too —
+the only way to verify that is indirectly by checking the *observed* ones.
+Balance on observables increases confidence that the post-treatment
+comparisons identify a causal effect.
+
+### Table 2A Panel A — Response rate, dollars unconditional, dollars conditional
+
+This is the descriptive table that contains the headline numbers. I report
+each cell with its mean and (for the binary outcome) a Wald standard error.
+
+```{python}
+#| label: table2a
+#| code-fold: false
+def stats(s):
+    n = len(s); m = s.mean(); sd = s.std(ddof=1)
+    return m, sd / math.sqrt(n), n
+
+groups = [
+    ("Control",            df['control']==1),
+    ("Treatment",          df['treatment']==1),
+    ("  $1:$1 match",      df['ratio']==1),
+    ("  $2:$1 match",      df['ratio']==2),
+    ("  $3:$1 match",      df['ratio']==3),
+    ("  Match cap = $25k", df['size']==1),
+    ("  Match cap = $50k", df['size']==2),
+    ("  Match cap = $100k",df['size']==3),
+    ("  Match cap unstated",df['size']==4),
+    ("  Ask 1x prior",     df['ask']==1),
+    ("  Ask 1.25x prior",  df['ask']==2),
+    ("  Ask 1.5x prior",   df['ask']==3),
+]
+rows = []
+for label, mask in groups:
+    sub  = df.loc[mask]
+    p, pse, n        = stats(sub['gave'])
+    a, ase, _        = stats(sub['amount'])
+    cond             = sub.loc[sub['gave']==1, 'amount']
+    ac, acse, ndon   = stats(cond)
+    rows.append([label, n, f"{p:.4f}",
+                 f"{a:.2f} ({ase:.2f})", f"{ac:.2f} ({acse:.2f})", ndon])
+pd.DataFrame(rows, columns=['Group','n','Response rate',
+                            'Amount unconditional ($)', 'Amount | gave>0 ($)',
+                            'n donors'])
+```
+
+The headline numbers replicate exactly:
+
+| Quantity              | Control | Treatment | Δ      |
+|-----------------------|---------|-----------|--------|
+| Response rate         | 1.79 %  | 2.20 %    | +0.42 pp |
+| Revenue / letter (\$) | 0.81    | 0.97      | +0.15  |
+| Avg gift \| gave (\$) | 45.54   | 43.87     | −1.67  |
+
+So: **the match doesn't make donors give more once they decide to give —
+it just makes more people decide to give.** That distinction will matter
+for the Table 3 regressions.
+
+### Visualizing the experiment
+
+```{python}
+#| label: fig-arms
+def ci(p, n, z=1.96):
+    se = math.sqrt(p*(1-p)/n)
+    return p*100, z*se*100
+
+bars = [("Control",   df.loc[df['control']==1,'gave']),
+        ("Any\nmatch", df.loc[df['treatment']==1,'gave']),
+        ("$1:$1",     df.loc[df['ratio']==1,'gave']),
+        ("$2:$1",     df.loc[df['ratio']==2,'gave']),
+        ("$3:$1",     df.loc[df['ratio']==3,'gave'])]
+labels, ms, errs = [], [], []
+for nm, s in bars:
+    p, e = ci(s.mean(), len(s)); labels.append(nm); ms.append(p); errs.append(e)
+
+fig, ax = plt.subplots(figsize=(7.5, 4))
+colors = ['#888888'] + ['#1f77b4']*4
+ax.bar(labels, ms, yerr=errs, capsize=4, color=colors, edgecolor='black')
+ax.axhline(ms[0], color='gray', ls='--', lw=0.8)
+ax.set_ylabel("Response rate (%)")
+ax.set_title("Response rate by treatment arm (95% CI)")
+for i, v in enumerate(ms):
+    ax.text(i, v + 0.05, f"{v:.2f}%", ha='center', fontsize=9)
+plt.tight_layout(); plt.show()
+```
+
+Two things jump out:
+
+1. The treatment ("Any match") bar is visibly higher than control, and the
+   gap is well outside the control CI.
+2. Within the treated arms, the **\$1:\$1** bar is statistically
+   indistinguishable from the **\$2:\$1** and **\$3:\$1** bars. The
+   matching ratio appears to do *nothing on the margin* once any match is
+   offered.
+
+### Table 3 — Probit / LPM of giving on treatment
+
+The paper's Table 3 column 1 reports a probit of `gave` on `treatment`
+("dprobit" in Stata, which gives marginal effects). The note in the
+homework prompt warns that the published numbers actually look like an
+OLS linear-probability model — I therefore report **both** to make the
+comparison transparent.
+
+```{python}
+#| label: table3
+#| code-fold: false
+def ols(y, X):
+    y = np.asarray(y, float); X = np.asarray(X, float)
+    keep = ~np.isnan(y) & ~np.isnan(X).any(axis=1)
+    y, X = y[keep], X[keep]
+    XtX_inv = np.linalg.inv(X.T @ X)
+    b = XtX_inv @ X.T @ y
+    r = y - X @ b
+    S = (X * r[:,None]).T @ (X * r[:,None])
+    cov = XtX_inv @ S @ XtX_inv          # HC0
+    return b, np.sqrt(np.diag(cov)), len(y)
+
+def probit(y, x):
+    y = np.asarray(y, float); x = np.asarray(x, float)
+    keep = ~np.isnan(y) & ~np.isnan(x); y, x = y[keep], x[keep]
+    X = np.column_stack([np.ones_like(x), x]); b = np.zeros(2)
+    for _ in range(50):
+        Xb = np.clip(X @ b, -8, 8)
+        Phi = np.array([0.5*(1+math.erf(v/math.sqrt(2))) for v in Xb])
+        phi = (1/math.sqrt(2*math.pi))*np.exp(-0.5*Xb**2)
+        Phi = np.clip(Phi, 1e-12, 1-1e-12)
+        g = X.T @ (phi*(y-Phi)/(Phi*(1-Phi)))
+        H = -(X * (phi**2/(Phi*(1-Phi)))[:,None]).T @ X
+        step = np.linalg.solve(H, g); bn = b - step
+        if np.max(np.abs(bn-b)) < 1e-9: b = bn; break
+        b = bn
+    cov = -np.linalg.inv(H); se = np.sqrt(np.diag(cov))
+    xbar = X.mean(0); xb = xbar @ b
+    me  = (1/math.sqrt(2*math.pi))*math.exp(-0.5*xb**2)*b[1]   # PEA marginal
+    return b, se, me, len(y)
+
+# (1) Probit, treatment only
+bp, sep, me, n = probit(df['gave'], df['treatment'])
+# (2) LPM, treatment only
+bo, seo, n2 = ols(df['gave'].values,
+                  np.column_stack([np.ones(len(df)), df['treatment'].values]))
+# (3) LPM with full controls
+ctrls = ['treatment','ratio2','ratio3','size25','size50','size100','askd2','askd3']
+sub   = df.dropna(subset=ctrls + ['gave'])
+bo2, seo2, n3 = ols(sub['gave'].values,
+                    np.column_stack([np.ones(len(sub))] + [sub[c].values for c in ctrls]))
+
+t3 = pd.DataFrame([
+  ["Probit  treatment-only (β)",        bp[1], sep[1], n,  "Karlan & List Table 3 col. 1 reports 0.0867"],
+  ["Probit  treatment-only (marg eff)", me,    np.nan, n,  "Karlan & List Table 3 col. 1 reports 0.004"],
+  ["OLS LPM treatment-only",            bo[1], seo[1], n2, "matches probit marginal effect"],
+  ["OLS LPM with full controls",        bo2[1],seo2[1],n3, "treatment coef shown; controls in code"],
+], columns=['Specification','coef','HC0 se','n','note']).round(5)
+t3
+```
+
+**Interpretation.**
+
+* The probit *marginal effect* of being in the treatment is **+0.0042**, exactly
+  matching the paper (Table 3, col. 1).
+* The OLS LPM gives the same point estimate (this is no coincidence: with a
+  single binary regressor, the OLS slope = the difference in means = the
+  probit marginal effect by construction).
+* Adding the full set of controls (match-ratio dummies, cap-size dummies,
+  ask-amount dummies) **shrinks** the treatment coefficient because part of
+  the average treatment effect is being absorbed by the always-included
+  ratio-1 indicator. The relevant lesson is the same: the level effect is
+  small in absolute terms (≈0.4 pp) but large relative to the 1.8% baseline
+  (a +22% lift in giving).
+* These point estimates are nearly identical regardless of whether we use a
+  probit or an OLS specification — the LPM is a perfectly fine approximation
+  here because predicted probabilities are far from 0 and 1. This is why
+  the published table can be labeled "probit" while reporting OLS-looking
+  numbers without anyone losing sleep.
+
+### Are larger match ratios more effective? (No.)
+
+```{python}
+#| label: fig-ratio
+arms = [("Control", df['control']==1),
+        ("$1:$1",   df['ratio']==1),
+        ("$2:$1",   df['ratio']==2),
+        ("$3:$1",   df['ratio']==3)]
+labels, ps, errs = [], [], []
+for nm, m in arms:
+    s = df.loc[m,'gave']; p = s.mean()*100
+    se = math.sqrt(p/100*(1-p/100)/len(s))*100
+    labels.append(nm); ps.append(p); errs.append(1.96*se)
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.errorbar(labels, ps, yerr=errs, fmt='o', capsize=5, color='#1f77b4', ms=8, lw=1.5)
+ax.axhline(ps[0], color='gray', ls='--', lw=0.8, label='Control level')
+ax.set_ylabel("Response rate (%)")
+ax.set_title("No incremental response from a richer match")
+ax.legend(); plt.tight_layout(); plt.show()
+```
+
+Going from no match → 1:1 raises the response rate by ≈0.3 pp; going from
+1:1 → 2:1 → 3:1 adds essentially nothing. This is the "price puzzle" the
+paper highlights: theory says lowering the effective price of giving should
+increase contributions, but empirically the *announcement* of a match
+appears to act mostly as a salience / signal effect, not a price effect.
+
+## Something Additional — Where does the treatment effect actually come from?
+
+The paper's Table 5 Panel B contains a striking heterogeneity result that
+gets only a few sentences in the text: the response to the matching offer
+is concentrated in donors who live in **red states** (states that voted for
+George W. Bush in 2004), and is essentially zero among **blue-state**
+donors. I replicate that finding here and visualize it as a 2×2 picture,
+which I think makes the result much easier to digest than the paper's
+table-only presentation.
+
+```{python}
+#| label: red-blue
+def diff(arr_t, arr_c):
+    n_t, n_c = len(arr_t), len(arr_c)
+    p_t, p_c = arr_t.mean(), arr_c.mean()
+    se = math.sqrt(p_t*(1-p_t)/n_t + p_c*(1-p_c)/n_c)
+    z  = (p_t - p_c) / se
+    return p_t-p_c, se, z, two_sided_p_z(z)
+
+red  = diff(df.loc[(df['redcty']==1)&(df['treatment']==1),'gave'],
+            df.loc[(df['redcty']==1)&(df['control']==1),'gave'])
+blue = diff(df.loc[(df['bluecty']==1)&(df['treatment']==1),'gave'],
+            df.loc[(df['bluecty']==1)&(df['control']==1),'gave'])
+pd.DataFrame([
+    ["Red-state donors",  *[f"{x:.4f}" for x in red]],
+    ["Blue-state donors", *[f"{x:.4f}" for x in blue]],
+], columns=['Subgroup','Δ response (T−C)','SE','z','p'])
+```
+
+```{python}
+#| label: fig-red-blue
+def cell(mask, s_mask):
+    s = df.loc[mask & s_mask, 'gave']
+    p = s.mean()*100; se = math.sqrt(p/100*(1-p/100)/len(s))*100
+    return p, 1.96*se, len(s)
+
+states  = ["Red state", "Blue state"]
+arms    = ["Control", "Treatment"]
+masks_s = [df['redcty']==1, df['bluecty']==1]
+masks_a = [df['control']==1, df['treatment']==1]
+
+fig, ax = plt.subplots(figsize=(7, 4.2))
+x = np.arange(2); w = 0.35
+for i, am in enumerate(masks_a):
+    vals = [cell(ms, am) for ms in masks_s]
+    ax.bar(x + (i-0.5)*w, [v[0] for v in vals], w,
+           yerr=[v[1] for v in vals], capsize=4,
+           label=arms[i], color=['#888888','#d62728'][i], edgecolor='black')
+ax.set_xticks(x); ax.set_xticklabels(states)
+ax.set_ylabel("Response rate (%)")
+ax.set_title("Where does the matching grant 'work'? Red vs. blue states")
+ax.legend()
+plt.tight_layout(); plt.show()
+```
+
+**What the picture shows.** In red-state counties the match offer raises
+the response rate from 1.82% → 2.33% — a +0.51 pp lift that is highly
+significant (z ≈ 2.7, p ≈ 0.006). In blue-state counties the match raises
+the response rate by only 0.30 pp, and that difference is *not*
+statistically significant (z ≈ 1.6, p ≈ 0.10).
+
+**Why this matters.** The aggregate treatment effect documented in Table 3
+is essentially driven by the red-state subsample. That has two
+implications:
+
+1. *External validity*: average treatment effects can mask large
+   heterogeneity. A non-profit that solicits primarily in blue states might
+   see no benefit from running a match campaign even though the published
+   ATE looks positive.
+2. *Mechanism*: the result is hard to square with a pure price-of-giving
+   story (why would the price of charity be more elastic among Republicans?
+   they aren't a particularly low-income group). It is more consistent with
+   a **signal-of-quality** mechanism — a wealthy concerned member endorsing
+   the cause is plausibly more persuasive to donors who are already on the
+   ideological fence about the (liberal) organization than to its core
+   blue-state supporters.
+
+### Why is this experiment causal? (Brief methodological note)
+
+Random assignment of the matching-grant offer means the treatment indicator
+is, by construction, **independent of all potential outcomes** —
+characteristics like prior generosity, income, or political ideology are
+on average the same across treatment and control. Therefore the simple
+difference in means
+
+$$\widehat{\text{ATE}} = \overline{Y}_T - \overline{Y}_C$$
+
+is an unbiased estimator of the average causal effect of the matching
+offer. The Table 1 balance check is the empirical evidence that the
+randomization "took"; without that check, we would have no
+direct way to rule out chance imbalance on the unobservables.
+
+The OLS regression in Table 3 is doing the same thing the difference in
+means does, just with extra controls to soak up residual variance and
+shrink standard errors. The probit specification adds nothing
+substantively — it just fits a non-linear link between the index and the
+probability of giving. Causal identification here lives entirely in the
+randomization, not in the functional form.
+
+## Summary
+
+The replication confirms all three of the paper's main results:
+
+* The 11-variable balance check is clean — no significant imbalances.
+* The matching-grant offer raises the response rate from **1.79% to
+  2.20%** (+22%, p < 0.01) and revenue per letter from \$0.81 to \$0.97.
+* Conditional on giving, donors in the treatment arm actually give a
+  *slightly smaller* average gift, so the entire revenue effect comes
+  from the extensive margin (more donors, not bigger gifts).
+* Larger match ratios (2:1, 3:1) deliver no additional response over a
+  1:1 match — the headline "price puzzle".
+* The aggregate effect is concentrated in red-state donors, suggesting
+  that the match operates partly as a quality signal rather than as a
+  pure price subsidy.
