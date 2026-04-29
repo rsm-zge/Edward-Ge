@@ -22,15 +22,15 @@ Write a short introduction for the reader that sets the scene. Cover the followi
 ## The A/B Test as a Statistical Problem
 
 ::: {.callout-note}
-In this section, connect the A/B test to a formal statistical framework. Address each of the following ideas:
+In this section, we connect the A/B test to a formal statistical framework:
 
-- Each visitor either signs up or does not, so we can model each visitor's outcome as a draw from a Bernoulli distribution with parameter $\pi$, the probability of signing up.
+- Each visitor either signs up or does not, so we can model each visitor's outcome as a draw from a Bernoulli distribution with parameter $\pi$, representing the probability of signing up.
 
-- Because the CTA a visitor sees may influence their probability of signing up, we allow the parameter to differ across groups: visitors who see CTA A have sign-up probability $\pi_A$, and visitors who see CTA B have sign-up probability $\pi_B$.  Each visitor can either sign up (1) or not (0).
+- Because the CTA a visitor sees may influence their behavior, we allow this probability to differ across groups: visitors who see CTA A have sign-up probability $\pi_A$, while those who see CTA B have probability $\pi_B$. Each outcome is binary (1 for sign-up, 0 otherwise).
 
-- The quantity we care about is $\theta = \pi_A - \pi_B$, the difference in sign-up rates between the two CTAs.
+- The main quantity of interest is $\theta = \pi_A - \pi_B$, which measures the difference in sign-up rates between the two CTAs.
 
-- Our estimator of $\theta$ is the difference in sample means, $\hat\theta = \bar{X}_A - \bar{X}_B$. (Since each observation is either 0 or 1, the sample mean is simply the proportion of visitors who signed up — so $\bar{X}_A = \hat\pi_A$ and $\bar{X}_B = \hat\pi_B$.)
+- We estimate $\theta$ using the difference in sample means, $\hat\theta = \bar{X}_A - \bar{X}_B$. Since each observation is either 0 or 1, the sample mean corresponds to the sample proportion, so $\bar{X}_A = \hat\pi_A$ and $\bar{X}_B = \hat\pi_B$.
 :::
 
 
